@@ -1,0 +1,21 @@
+name = "PIC"
+uuid = "9c7c5f8e-3e9a-4f8b-8e1f-4e2c3d4b5a6e"
+authors = ["PIC-1D Refactor"]
+version = "0.1.0"
+
+[deps]
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+JLD2 = "033835bb-8acc-5ee8-924d-7d1fdd29d1a7"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+StaticArrays = "90137ffa-7385-5640-b81b-eceea3459d71"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+SummationByPartsOperators = "6b19cf85-48de-5d9d-bfff-9ab5916a1f03"
+
+[compat]
+julia = "1.9"
+FFTW = "1.7"
+JLD2 = "0.4"
+StaticArrays = "1.6"
+SummationByPartsOperators = "0.5"
