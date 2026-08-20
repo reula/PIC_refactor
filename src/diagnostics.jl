@@ -68,6 +68,25 @@ function total_charge(n::AbstractArray{Float64,D}, g::PICGrid{D}) where {D}
 end
 
 """
+    check_constraints(u, g, N, dep, factor)
+
+Check Gauss's law (div E = rho) for the state `u`.
+Returns `(err_max, err_l2)` using the cell volume for the L2 norm.
+In 2D TM mode the magnetic field is scalar and divergence-free trivially.
+"""
+function check_constraints(u::AbstractVector, g::PICGrid{D}, N::Int, dep::DepositDensity{D}, factor::Int) where {D}
+    E, B = get_fields(u, g, N)
+    n = zeros(size(g))
+    deposit!(dep, u, g, n; factor=factor)
+    rho = n .- 1.0
+    divE = field_divergence(E, g)
+    residual = divE .- rho
+    err_max = maximum(abs.(residual))
+    err_l2 = sqrt(sum(residual.^2) * cell_volume(g))
+    return err_max, err_l2
+end
+
+"""
     temperature(u, g, N; mode=:rel, m=1.0)
 
 Compute the kinetic temperature. `mode` can be:

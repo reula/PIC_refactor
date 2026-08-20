@@ -1,4 +1,9 @@
 cd(@__DIR__)
+
+using Pkg
+Pkg.activate(joinpath(@__DIR__, ".."))
+Pkg.instantiate()
+
 include(joinpath("..","src","PIC.jl"))
 using .PIC
 using Plots

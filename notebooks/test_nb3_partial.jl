@@ -11,10 +11,11 @@ using FFTW
 using FileIO, JLD2
 using Printf
 
+# Use the existing spectral test output (which has 3 snapshots) as if it were partial
 out_file = joinpath("..", "Results",
-    "thermal_rel_no_maxwell_J50x50_N5_Th3_alp1_o5_test.jld2")
+    "thermal_rel_spectral_J50x50_N5_Th3_alp1_o5_test.jld2")
 
-isfile(out_file) || error("Output file not found: run test_nb2.jl first")
+isfile(out_file) || error("Output file not found: run test_nb2_spectral.jl first")
 
 data = load(out_file)
 N, J, box, order = data["par_grid"]
@@ -42,5 +43,6 @@ avg = load_averages(out_file, g, M_g; indices=tiempos,
 @assert length(avg[:Gauss_max]) == M_g
 @assert length(avg[:Gauss_l2]) == M_g
 
+println("t_series = ", t_series)
 println("final t = ", t_series[end])
-println("Notebook 3 load test passed")
+println("Notebook 3 partial-load test passed")

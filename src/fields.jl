@@ -47,7 +47,7 @@ function solve_poisson!(E::AbstractArray{Float64,Dp}, rho::AbstractArray{Float64
         Vd = similar(V)
         for I in CartesianIndices(V)
             kd = ks[d][I[d]]
-            Vd[I] = im * kd * V[I] / k2[I]
+            Vd[I] = -im * kd * V[I] / k2[I]
         end
         Vd[1] = 0.0 + 0.0im
         Ed = irfft(Vd, g.sz[1])
@@ -97,6 +97,26 @@ function _spectral_derivative(A::AbstractArray{Float64}, m::SpectralMaxwell, dir
     Ahat = m.plan_rfft * Ac
     _scale_k!(Ahat, m.ks[dir], dir)
     return m.plan_irfft * Ahat
+end
+
+"""
+    field_divergence(E, g; mode=:spectral)
+
+Compute the divergence of a vector field `E` with shape `(D, size(g)...)`
+using spectral derivatives on the periodic grid `g`.
+Returns an array with shape `size(g)`.
+"""
+function field_divergence(E::AbstractArray{Float64}, g::PICGrid{D}; mode::Symbol=:spectral) where {D}
+    if mode != :spectral
+        error("field_divergence only supports mode=:spectral")
+    end
+    spec = SpectralMaxwell(g)
+    divE = zeros(size(g))
+    for d in 1:D
+        Ed = selectdim(E, 1, d)
+        divE .+= _spectral_derivative(Ed, spec, d)
+    end
+    return divE
 end
 
 function _add_derivative!(out, A, m::SpectralMaxwell{D}, dir::Int, α::Real=1.0) where {D}

@@ -45,9 +45,7 @@ struct PICGrid{D}
     end
 end
 
-PICGrid(box::Box{D}, sz, order) where {D} = PICGrid{D}(box, sz, order)
-PICGrid(box::Box{D}, sz::Tuple{Vararg{Integer,D}}, order) where {D} = PICGrid{D}(box, collect(sz), order)
-PICGrid(box::Box{D}, sz::NTuple{D,Integer}, order) where {D} = PICGrid{D}(box, collect(sz), order)
+PICGrid(box::Box{D}, sz, order) where {D} = PICGrid{D}(box, collect(sz), order)
 
 Base.ndims(::PICGrid{D}) where {D} = D
 Base.size(g::PICGrid) = Tuple(g.sz)

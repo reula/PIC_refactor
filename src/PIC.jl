@@ -23,14 +23,14 @@ export
     # deposition
     DepositDensity, DepositCurrent, deposit!, reset!,
     # field solvers
-    solve_poisson!, MaxwellSolver, NoMaxwell, SpectralMaxwell, SBPMaxwell,
+    solve_poisson!, field_divergence, MaxwellSolver, NoMaxwell, SpectralMaxwell, SBPMaxwell,
     # interpolation
     interpolate_field!,
     # RHS & stepping
     rhs!, RHSParams, RHSWorkspace, StepWorkspace, RK4_step!, make_state, get_fields,
     # energies / diagnostics
     kinetic_energy, field_energy, total_energy, temperature_rel, temperature,
-    total_momentum, total_charge,
+    total_momentum, total_charge, check_constraints,
     # IO helpers
     save_averages, load_averages, save_snapshot,
     # initial data

@@ -9,7 +9,6 @@ using .PIC
 using Base.Threads
 using Printf
 using FileIO, JLD2
-using SummationByPartsOperators
 println("nthreads = ", nthreads())
 
 const N_exp = 5
@@ -53,30 +52,11 @@ B = zeros(size(g))
 set_fields!(u, g, N, E, B)
 coordinate_test(u, g, N)
 
-# Choose solver: :no_maxwell, :spectral, or :sbp
-solver_choice = :no_maxwell
-
-if solver_choice == :no_maxwell
-    maxwell = NoMaxwell{2}()
-    suffix = "no_maxwell"
-elseif solver_choice == :spectral
-    maxwell = SpectralMaxwell(g)
-    suffix = "spectral"
-elseif solver_choice == :sbp
-    Dx = periodic_derivative_operator(derivative_order=1, accuracy_order=6,
-                                      xmin=box.lo[1], xmax=box.hi[1], N=J[1])
-    Dy = periodic_derivative_operator(derivative_order=1, accuracy_order=6,
-                                      xmin=box.lo[2], xmax=box.hi[2], N=J[2])
-    maxwell = SBPMaxwell((Dx, Dy))
-    suffix = "sbp"
-else
-    error("unknown solver_choice = $solver_choice")
-end
-
-p = RHSParams(g, N; factor=factor, maxwell=maxwell)
+# Spectral Maxwell solver
+p = RHSParams(g, N; factor=factor, maxwell=SpectralMaxwell(g))
 ws = StepWorkspace(u)
 
-run_name_full = "thermal_rel_$(suffix)_J$(J[1])x$(J[2])_N$(N_exp)_Th$(θ_exp)_alp$(alpha_exp)_o$(order)_test"
+run_name_full = "thermal_rel_spectral_J$(J[1])x$(J[2])_N$(N_exp)_Th$(θ_exp)_alp$(alpha_exp)_o$(order)_test"
 out_file = joinpath("..", "Results", run_name_full * ".jld2")
 mkpath(dirname(out_file))
 isfile(out_file) && rm(out_file)

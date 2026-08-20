@@ -6,6 +6,8 @@ Pkg.instantiate()
 
 include(joinpath("..","src","PIC.jl"))
 using .PIC
+using Plots
+using Statistics
 using Base.Threads
 using Printf
 using FileIO, JLD2
@@ -53,41 +55,20 @@ B = zeros(size(g))
 set_fields!(u, g, N, E, B)
 coordinate_test(u, g, N)
 
-# Choose solver: :no_maxwell, :spectral, or :sbp
-solver_choice = :no_maxwell
+err_max_initial, err_l2_initial = check_constraints(u, g, N, dep, factor)
+println("initial  max |div E - rho| = ", err_max_initial)
+println("initial  L2  |div E - rho| = ", err_l2_initial)
 
-if solver_choice == :no_maxwell
-    maxwell = NoMaxwell{2}()
-    suffix = "no_maxwell"
-elseif solver_choice == :spectral
-    maxwell = SpectralMaxwell(g)
-    suffix = "spectral"
-elseif solver_choice == :sbp
-    Dx = periodic_derivative_operator(derivative_order=1, accuracy_order=6,
-                                      xmin=box.lo[1], xmax=box.hi[1], N=J[1])
-    Dy = periodic_derivative_operator(derivative_order=1, accuracy_order=6,
-                                      xmin=box.lo[2], xmax=box.hi[2], N=J[2])
-    maxwell = SBPMaxwell((Dx, Dy))
-    suffix = "sbp"
-else
-    error("unknown solver_choice = $solver_choice")
-end
+solver_choice = :spectral
+maxwell = SpectralMaxwell(g)
+suffix = "spectral"
 
 p = RHSParams(g, N; factor=factor, maxwell=maxwell)
 ws = StepWorkspace(u)
 
-run_name_full = "thermal_rel_$(suffix)_J$(J[1])x$(J[2])_N$(N_exp)_Th$(θ_exp)_alp$(alpha_exp)_o$(order)_test"
-out_file = joinpath("..", "Results", run_name_full * ".jld2")
+out_file = joinpath("..", "Results", "thermal_rel_constraints_test.jld2")
 mkpath(dirname(out_file))
 isfile(out_file) && rm(out_file)
-
-save(out_file, Dict(
-    "run_name" => run_name_full,
-    "par_grid" => (N, J, box, order),
-    "par_evolv" => (t_i, t_f, M, M_g, dt)
-))
-
-save_averages(out_file, 1, u, g, N; dep=dep, factor=factor)
 
 let t = t_i
     out_every = div(M - 1, M_g - 1)
@@ -102,4 +83,8 @@ let t = t_i
         end
     end
 end
-println("Done. Output: ", out_file)
+
+err_max_final, err_l2_final = check_constraints(u, g, N, dep, factor)
+println("final    max |div E - rho| = ", err_max_final)
+println("final    L2  |div E - rho| = ", err_l2_final)
+println("Done")
