@@ -72,44 +72,57 @@ end
     (base + D + 1):(base + 2D)
 end
 
-@inline range_E(g::PICGrid, N::Int) = (particle_dof(g, N) + 1):(particle_dof(g, N) + ndims(g) * n_cells(g))
+"""
+    range_F(g, N)
 
-@inline function range_B(g::PICGrid, N::Int)
-    nE = ndims(g) * n_cells(g)
-    start = particle_dof(g, N) + nE + 1
-    stop  = start + n_B_components(g) * n_cells(g) - 1
-    start:stop
+Linear range covering the whole field block in the state vector. The block is
+stored as a single array reshaped to `(field_components(g), size(g)...)`, i.e.
+component-interleaved per cell. This matches the layout used in
+PIC-1D/run_2D_clean.ipynb.
+"""
+@inline range_F(g::PICGrid, N::Int) = (particle_dof(g, N) + 1):state_length(g, N)
+
+@inline function _reshape_fields(u::AbstractVector, g::PICGrid{D}, N::Int) where {D}
+    reshape(view(u, range_F(g, N)), (field_components(g), size(g)...))
 end
 
-function get_E(u::AbstractVector, g::PICGrid, N::Int)
-    reshape(view(u, range_E(g, N)), (ndims(g), size(g)...))
+function get_E(u::AbstractVector, g::PICGrid{D}, N::Int) where {D}
+    F = _reshape_fields(u, g, N)
+    idx = ntuple(_ -> :, D)
+    return view(F, 1:D, idx...)
 end
 
-function get_B(u::AbstractVector, g::PICGrid, N::Int)
-    D = ndims(g)
+function get_B(u::AbstractVector, g::PICGrid{D}, N::Int) where {D}
     D == 1 && error("No magnetic field in 1D")
+    F = _reshape_fields(u, g, N)
+    idx = ntuple(_ -> :, D)
     if D == 2
-        reshape(view(u, range_B(g, N)), size(g))
+        return view(F, D + 1, idx...)
     else
-        reshape(view(u, range_B(g, N)), (D, size(g)...))
+        return view(F, (D + 1):(2D), idx...)
     end
 end
 
 make_state(g::PICGrid, N::Int) = zeros(Float64, state_length(g, N))
 
-function set_fields!(u::AbstractVector, g::PICGrid, N::Int, E::AbstractArray, B=nothing)
-    u[range_E(g, N)] .= vec(E)
-    D = ndims(g)
+function set_fields!(u::AbstractVector, g::PICGrid{D}, N::Int, E::AbstractArray, B=nothing) where {D}
+    F = _reshape_fields(u, g, N)
+    idx = ntuple(_ -> :, D)
+    view(F, 1:D, idx...) .= E
     if D ≥ 2
         B isa Nothing && error("B field required for D=$D")
-        u[range_B(g, N)] .= vec(B)
+        if D == 2
+            view(F, D + 1, idx...) .= B
+        else
+            view(F, (D + 1):(2D), idx...) .= B
+        end
     end
     u
 end
 
-function get_fields(u::AbstractVector, g::PICGrid, N::Int)
+function get_fields(u::AbstractVector, g::PICGrid{D}, N::Int) where {D}
     E = get_E(u, g, N)
-    B = ndims(g) ≥ 2 ? get_B(u, g, N) : nothing
+    B = D ≥ 2 ? get_B(u, g, N) : nothing
     return E, B
 end
 

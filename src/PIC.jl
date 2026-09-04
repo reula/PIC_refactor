@@ -30,7 +30,7 @@ export
     rhs!, RHSParams, RHSWorkspace, StepWorkspace, RK4_step!, make_state, get_fields,
     # energies / diagnostics
     kinetic_energy, field_energy, total_energy, temperature_rel, temperature,
-    total_momentum, total_charge, check_constraints,
+    total_momentum, total_charge, check_constraints, check_constraints_weak,
     # IO helpers
     save_averages, load_averages, save_snapshot,
     # initial data

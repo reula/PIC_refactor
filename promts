@@ -1,0 +1,6 @@
+Look only at folders PIC-1D and PIC_refactor
+I want you to check every function used in run_2D_clean.ipynb agains the corresponding functions used in 02_run_2D.ipynb. For that make test scripts generate some some small initial data and compare the results for each one of them. The signs in the functions in PIC-1D are correct in my convention. So adapt it for the rest. 
+
+
+In the notebook /Users/reula/Julia/PIC/PIC-1D/ini_dat_v2.ipynb there are 
+many other options to generate initial data. Please look for a confortable and optimized way to incorporate them in the new version: /Users/reula/Julia/PIC/PIC_refactor/notebooks/01_generate_initial_data.ipynb. Keep in mind that these different configurations are going to be used in /Users/reula/Julia/PIC/PIC_refactor/notebooks/02_run_2D.ipynb as they are in: /Users/reula/Julia/PIC/PIC-1D/run_2D_clean.ipynb, please modify this last one also as to be able to use all the configurations available

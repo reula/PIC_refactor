@@ -33,8 +33,11 @@ end
 """
     solve_poisson!(E, rho, g)
 
-Solve ∇·E = rho on a periodic grid and store the vector field E.
+Solve ∇·E = -rho on a periodic grid and store the vector field E.
 `E` must have shape `(D, size(g)...)`. The zero mode is removed.
+
+Note: with the convention rho = n - 1 used in PIC-1D, this is the standard
+Poisson equation for electrons (charge density = -rho).
 """
 function solve_poisson!(E::AbstractArray{Float64,Dp}, rho::AbstractArray{Float64,D},
                         g::PICGrid{D}) where {D,Dp}
@@ -47,7 +50,7 @@ function solve_poisson!(E::AbstractArray{Float64,Dp}, rho::AbstractArray{Float64
         Vd = similar(V)
         for I in CartesianIndices(V)
             kd = ks[d][I[d]]
-            Vd[I] = -im * kd * V[I] / k2[I]
+            Vd[I] = im * kd * V[I] / k2[I]
         end
         Vd[1] = 0.0 + 0.0im
         Ed = irfft(Vd, g.sz[1])
