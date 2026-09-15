@@ -11,7 +11,7 @@ function _k_vectors(g::PICGrid{D}) where {D}
     if D == 1
         return (k1,)
     end
-    kother = ntuple(d -> collect(fftfreq(g.sz[d], 2π / g.dx[d])), D - 1)
+    kother = ntuple(d -> collect(fftfreq(g.sz[d + 1], 2π / g.dx[d + 1])), D - 1)
     return (k1, kother...)
 end
 
@@ -178,9 +178,31 @@ function add_maxwell_rhs!(dF, F, g::PICGrid{1}, ::NoMaxwell{1})
     return dF
 end
 
+function add_maxwell_rhs!(dF, F, g::PICGrid{1}, ::SpectralMaxwell{1})
+    # No magnetic field in 1D
+    return dF
+end
+
 # -----------------------------------------------------------------------------
-# SBP Maxwell solver (1D/2D, keeps old option)
+# Derivative-operator Maxwell solvers
+# (SBP, Holoborodko and Lanczos use one periodic derivative operator per axis;
+# they only differ in which operator type was requested at construction time.)
 # -----------------------------------------------------------------------------
+
+# Shared 2D TM Maxwell RHS for any solver that provides (Dx, Dy):
+#   ∂t E1 =  ∂y B         ∂t E2 = -∂x B        ∂t B =  ∂y E1 - ∂x E2
+function _derivative_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
+                                  g::PICGrid{2}, Dx, Dy)
+    @views for i in 1:g.sz[1]
+        mul!(dF[1, i, :], Dy, F[3, i, :], 1.0, 1.0)   # +∂y B
+        mul!(dF[3, i, :], Dy, F[1, i, :], 1.0, 1.0)   # +∂y E1
+    end
+    @views for j in 1:g.sz[2]
+        mul!(dF[2, :, j], Dx, F[3, :, j], -1.0, 1.0)  # -∂x B
+        mul!(dF[3, :, j], Dx, F[2, :, j], -1.0, 1.0)  # -∂x E2
+    end
+    return dF
+end
 
 struct SBPMaxwell{D} <: MaxwellSolver{D}
     Dx::NTuple{D,Any}           # derivative operators
@@ -199,17 +221,10 @@ end
 function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
                           g::PICGrid{2}, m::SBPMaxwell{2})
     Dx, Dy = m.Dx
-    Δx, Δy = m.Δx
-    σx, σy = m.σ
-    @views for i in 1:g.sz[1]
-        mul!(dF[1, i, :], Dy, F[3, i, :], 1.0, 1.0)
-        mul!(dF[3, i, :], Dy, F[1, i, :], 1.0, 1.0)
-    end
-    @views for j in 1:g.sz[2]
-        mul!(dF[2, :, j], Dx, F[3, :, j], -1.0, 1.0)
-        mul!(dF[3, :, j], Dx, F[2, :, j], -1.0, 1.0)
-    end
+    _derivative_maxwell_rhs!(dF, F, g, Dx, Dy)
     if m.use_dissipation
+        Δx, Δy = m.Δx
+        σx, σy = m.σ
         @views for i in 1:g.sz[1]
             for l in 1:3
                 mul!(dF[l, i, :], Δy, F[l, i, :], σy, 1.0)
@@ -226,6 +241,54 @@ end
 
 function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
                           g::PICGrid{1}, m::SBPMaxwell{1})
+    # 1D electrostatic: Maxwell waves not evolved
+    return dF
+end
+
+"""
+    HolboMaxwell(Dops)
+
+Maxwell solver based on the Holoborodko periodic derivative operators
+(one per spatial axis), see `periodic_derivative_operator(Holoborodko2008(); …)`
+from SummationByPartsOperators.
+"""
+struct HolboMaxwell{D} <: MaxwellSolver{D}
+    Dx::NTuple{D,Any}
+end
+HolboMaxwell(derivative_ops) = HolboMaxwell{length(derivative_ops)}(Tuple(derivative_ops))
+
+function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
+                          g::PICGrid{2}, m::HolboMaxwell{2})
+    Dx, Dy = m.Dx
+    return _derivative_maxwell_rhs!(dF, F, g, Dx, Dy)
+end
+
+function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
+                          g::PICGrid{1}, m::HolboMaxwell{1})
+    # 1D electrostatic: Maxwell waves not evolved
+    return dF
+end
+
+"""
+    LanczosMaxwell(Dops)
+
+Maxwell solver based on the Lanczos (low-noise) periodic derivative operators
+(one per spatial axis), see `periodic_derivative_operator(LanczosLowNoise(); …)`
+from SummationByPartsOperators.
+"""
+struct LanczosMaxwell{D} <: MaxwellSolver{D}
+    Dx::NTuple{D,Any}
+end
+LanczosMaxwell(derivative_ops) = LanczosMaxwell{length(derivative_ops)}(Tuple(derivative_ops))
+
+function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
+                          g::PICGrid{2}, m::LanczosMaxwell{2})
+    Dx, Dy = m.Dx
+    return _derivative_maxwell_rhs!(dF, F, g, Dx, Dy)
+end
+
+function add_maxwell_rhs!(dF::AbstractArray{Float64}, F::AbstractArray{Float64},
+                          g::PICGrid{1}, m::LanczosMaxwell{1})
     # 1D electrostatic: Maxwell waves not evolved
     return dF
 end

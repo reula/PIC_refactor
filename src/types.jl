@@ -23,6 +23,7 @@ end
 
 
 Base.length(::Box{D}) where {D} = D
+Base.ndims(::Box{D}) where {D} = D
 extent(b::Box) = b.hi .- b.lo
 extent(b::Box, d::Int) = b.hi[d] - b.lo[d]
 

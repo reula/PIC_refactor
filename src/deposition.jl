@@ -167,7 +167,7 @@ function deposit!(dep::DepositDensity{D}, u::AbstractVector, g::PICGrid{D},
     positions!(dep.r, u, g)
     get_indices_and_y!(dep.idx, dep.y, dep.r, g; yshift=yshift)
     reset!(dep)
-    n0 = dep.N / n_cells(g) * factor^2
+    n0 = dep.N / n_cells(g) * factor^D
     nt = nthreads()
     @threads :static for tid in 1:nt
         istart, istop = _chunk_range(dep.N, tid, nt)
@@ -232,7 +232,7 @@ function deposit!(dep::DepositCurrent{D}, u::AbstractVector, g::PICGrid{D},
     velocities!(dep.v, u, g; m=m)
     get_indices_and_y!(dep.idx, dep.y, dep.r, g; yshift=yshift)
     reset!(dep)
-    n0 = dep.N / n_cells(g) * factor^2
+    n0 = dep.N / n_cells(g) * factor^D
     nt = nthreads()
     @threads :static for tid in 1:nt
         istart, istop = _chunk_range(dep.N, tid, nt)

@@ -24,6 +24,7 @@ export
     DepositDensity, DepositCurrent, deposit!, reset!,
     # field solvers
     solve_poisson!, field_divergence, MaxwellSolver, NoMaxwell, SpectralMaxwell, SBPMaxwell,
+    HolboMaxwell, LanczosMaxwell, WENOMaxwell,
     # interpolation
     interpolate_field!,
     # RHS & stepping
@@ -35,6 +36,11 @@ export
     save_averages, load_averages, save_snapshot,
     # initial data
     build_initial_data_D, retrieve_initial_data_D,
+    build_initial_data_1D, retrieve_initial_data_1D,
+    int_mid_point_f,
+    thermal_rel_config, weibel_norel_config, weibel_rel_config,
+    undamped_l_config, undamped_s_config, vlasov_exp_200_config, vlasov_exp_40_config,
+    landau_damped_1d_config, make_config, make_config_1d,
     f_p_rel, f_p_rel_max, f_p_thermal, f_p_thermal_max,
     f_p_weibel_norel, f_p_weibel_norel_max,
     f_p_two_particle_distribution, f_p_two_particle_distribution_max,
@@ -48,10 +54,12 @@ include("grid.jl")
 include("particles.jl")
 include("deposition.jl")
 include("fields.jl")
+include("weno.jl")
 include("interpolation.jl")
 include("rhs.jl")
 include("diagnostics.jl")
 include("io.jl")
 include("initial_data.jl")
+include("configs.jl")
 
 end # module
